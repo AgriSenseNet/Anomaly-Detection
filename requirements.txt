@@ -2,3 +2,6 @@ requests
 psycopg2-binary
 python-dotenv
 apache-airflow
+
+
+I NEED TO UPDATE THIS REQUIRENMENTS TEXT FOLDER ALWAYS
