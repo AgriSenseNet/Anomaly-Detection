@@ -19,11 +19,16 @@ def fetch_soil_ph(lat, lon):
     response.raise_for_status()
 
     data = response.json()
+    print(data)
 
     layers = data["properties"]["layers"]
     ph_layer = layers[0]
     depth_data = ph_layer["depths"][0]
     mean_value = depth_data["values"]["mean"]
+
+    if mean_value is None:
+        raise Exception("SoilGrids returned no pH value for this location/depth")
+    
 
     soil_ph = mean_value / 10
 
