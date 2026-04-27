@@ -7,3 +7,4 @@ airflow/
 logs/
 *.log
 .DS_Store
+for_me

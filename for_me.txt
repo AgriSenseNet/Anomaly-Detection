@@ -1,0 +1,10 @@
+Step 9.7 — If the DAG does not appear
+
+Run this:
+
+docker compose logs airflow-scheduler
+
+or:
+
+docker compose logs airflow-webserver
+
