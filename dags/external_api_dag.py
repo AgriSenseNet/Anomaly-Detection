@@ -28,7 +28,7 @@ def fetch_weather_task():
     """
     result = fetch_and_cache_weather(FIELD_ID, LAT, LON)
 
-    print("NASA POWER result:")
+    print("Open-Meteo result:")
     print(result)
 
     if not result.get("success"):
