@@ -1,4 +1,4 @@
-.env
+.env*
 __pycache__/
 *.pyc
 .venv/
@@ -7,4 +7,4 @@ airflow/
 logs/
 *.log
 .DS_Store
-for_me
+for_me.txt
