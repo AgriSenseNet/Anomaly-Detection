@@ -4,4 +4,18 @@ python-dotenv
 apache-airflow
 
 
-I NEED TO UPDATE THIS REQUIRENMENTS TEXT FOLDER ALWAYS
+# Sprint 2 - data validation
+great-expectations
+
+# Sprint 2 - data handling and machine learning
+pandas
+numpy
+scikit-learn
+torch
+mlflow
+matplotlib
+joblib
+
+# Optional later, only if we publish anomalies to Kafka
+# kafka-python
+

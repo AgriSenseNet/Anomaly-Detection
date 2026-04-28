@@ -8,3 +8,18 @@ or:
 
 docker compose logs airflow-webserver
 
+
+.env.local
+docker compose exec postgres psql -U airflow -d airflow
+CREATE DATABASE "agri-data-intelligence";
+\q
+
+docker compose exec postgres psql -U airflow -d agri-data-intelligence
+
+Get-Content .\db\schema.sql | docker compose exec -T postgres psql -U airflow -d agri-data-intelligence
+SELECT * FROM fields;
+
+inside cmd in docker postgres container 
+psql -U airflow -d agri-data-intelligence
+SELECT * FROM fields;
+SELECT * FROM external_api_cache ORDER BY timestamp DESC LIMIT 10;
