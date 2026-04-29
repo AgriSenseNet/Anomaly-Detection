@@ -13,7 +13,7 @@ default_args = {
 }
 
 with DAG(
-    dag_id="test_anomaly_dag",
+    dag_id="run_test_anomaly_dag",
     description="DAG to test anomaly detection logic with fake sensor data",
     default_args=default_args,
     start_date=datetime(2026, 4, 1),
