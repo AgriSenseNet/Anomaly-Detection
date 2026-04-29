@@ -1,6 +1,7 @@
 Step 9.7 — If the DAG does not appear
 
-docker compose exec airflow-scheduler airflow dags trigger external_api_dag   
+docker compose exec airflow-scheduler airflow dags trigger external_api_dag
+   
 
 Run this:
 
@@ -25,3 +26,9 @@ inside cmd in docker postgres container
 psql -U airflow -d agri-data-intelligence
 SELECT * FROM fields;
 SELECT * FROM external_api_cache ORDER BY timestamp DESC LIMIT 10;
+
+df = pd.read_sql(query, connection)
+
+Read it like:
+
+Read data from the database and store it in a table called df.
