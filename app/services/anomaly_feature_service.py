@@ -5,7 +5,7 @@ FEATURE_COLUMNS = [
     "delta_from_last",
     "rolling_mean_6",
     "rolling_std_6",
-    "hour_of_day",
+    "hours_of_day",
     "day_of_week",
 ]
 
@@ -70,4 +70,4 @@ def build_anomaly_features(df:pd.DataFrame) -> pd.DataFrame:
     return df
 
 def get_feature_columns():
-    return FEATURE_COLUMNS#later can use this if want
+    return FEATURE_COLUMNS
