@@ -27,10 +27,16 @@ with DAG(
         bash_command = "python /opt/airflow/scripts/run_validate_sensor_data.py clean",
     )
 
-    validate_sensor_data_model_task = BashOperator(
-        task_id = "validate_sensor_data_model_task",
-        bash_command = "echo 'Sensor validation passed. Model training can start next.'",
 
+    train_isolation_forest_task = BashOperator(
+        task_id="train_isolation_forest_task",
+        bash_command="python /opt/airflow/scripts/run_train_isolation_forest.py",
+    )    
+
+    score_anomalies_task = BashOperator(
+        task_id="score_anomalies_task",
+        bash_command="python /opt/airflow/scripts/run_score_anomalies.py",
     )
 
-    validate_sensor_data_task >> validate_sensor_data_model_task
+
+    validate_sensor_data_task >> train_isolation_forest_task >> score_anomalies_task

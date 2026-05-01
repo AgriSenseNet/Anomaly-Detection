@@ -1,0 +1,23 @@
+evidence_id,category,sprint_step,screenshot_file,description,status,notes
+1,Airflow,Step 10,screenshots/airflow_model_retraining_dag_green.png,"model_retraining_dag completed successfully with validation, training, and scoring tasks green",Done,Required evidence for end-to-end pipeline
+2,Airflow Logs,Step 10,screenshots/validate_sensor_data_task_logs.png,validate_sensor_data_task logs show clean-mode validation passed,Done,Shows validation gate works before training
+3,Airflow Logs,Step 10,screenshots/train_isolation_forest_task_logs.png,train_isolation_forest_task logs show Isolation Forest models trained and saved,Done,Shows model training works
+4,Airflow Logs,Step 10,screenshots/score_anomalies_task_logs.png,score_anomalies_task logs show anomaly scoring completed and anomalies saved,Done,Shows scoring pipeline works
+5,Database,Step 9 / Step 10,screenshots/anomaly_events_table.png,PostgreSQL anomaly_events table contains detected anomaly records,Done,Use SELECT * FROM anomaly_events ORDER BY timestamp DESC LIMIT 20
+6,Database Summary,Step 9 / Step 10,screenshots/anomaly_events_count_by_sensor_type.png,PostgreSQL count grouped by sensor_type shows anomaly records for different sensors,Optional,"Use SELECT sensor_type, COUNT(*) FROM anomaly_events GROUP BY sensor_type"
+7,Model Files,Step 8,screenshots/model_files_anomaly_detection_folder.png,models/anomaly_detection folder contains trained .joblib Isolation Forest model files,Done,Shows models were saved locally
+8,Validation,Step 4 / Step 5,screenshots/validate_all_mode_failed.png,Validation in all mode fails because fake data contains intentional invalid values,Done,Shows validation catches bad data
+9,Validation,Step 5 / Step 6,screenshots/validate_clean_mode_passed.png,Validation in clean mode passes and can be used by Airflow pipeline,Done,Shows valid data can continue to training
+10,Feature Engineering,Step 7,screenshots/anomaly_feature_engineering_test.png,"Feature engineering test output shows delta_from_last, rolling_mean_6, rolling_std_6, hour_of_day, and day_of_week columns",Optional,Good evidence if you have the terminal screenshot
+11,Great Expectations,Step 7,screenshots/great_expectations_data_docs.png,Great Expectations Data Docs or validation report showing sensor data validation results,Pending,Add later when Great Expectations/Data Docs is created
+12,MLflow,Step 15,screenshots/mlflow_sensor_anomaly_detection_experiment.png,"MLflow Sensor_Anomaly_Detection experiment showing logged parameters, metrics, and artifacts",Pending,Add later when MLflow logging is connected
+13,Evaluation,Step 12 / Step 13,screenshots/anomaly_detection_precision_recall_report.png,Precision/Recall report or terminal output showing evaluation metrics for manually labelled anomaly test set,Pending,Add later after manual_anomaly_labels.csv and evaluation script
+14,Sprint Board,Sprint 2 Evidence,screenshots/sprint2_board_tasks_done.png,Sprint board or task list showing Yasindu Sprint 2 tasks completed,Optional,Useful for final report evidence
+,,,,,,
+,,,,,,
+,,,,"evidence_id,category,step,screenshot_file,description",,
+,,,,"1,Airflow,Step 10,airflow_model_retraining_dag_green.png,model_retraining_dag completed with all tasks green",,
+,,,,"2,Airflow Logs,Step 10,validate_sensor_data_logs.png,Validation task passed using clean mode",,
+,,,,"3,Airflow Logs,Step 10,train_isolation_forest_logs.png,Isolation Forest models trained and saved",,
+,,,,"4,Airflow Logs,Step 10,score_anomalies_logs.png,Anomaly scoring completed and anomalies saved",,
+,,,,"5,Database,Step 10,anomaly_events_table.png,anomaly_events table contains detected anomalies",,
