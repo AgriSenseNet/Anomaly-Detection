@@ -75,7 +75,7 @@ def train_model_for_parameter(parameter_df, parameter):
 
     x_train = feature_df[feature_columns]
 
-    model = IsolationForest(n_estimators=100, contamination=0.01, random_state=42)
+    model = IsolationForest(n_estimators=100, contamination=0.02, random_state=42)
     model.fit(x_train)
 
     MODEL_FOLDER.mkdir(parents = True, exist_ok = True)

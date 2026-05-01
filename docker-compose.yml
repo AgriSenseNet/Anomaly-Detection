@@ -85,6 +85,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/app:/opt/airflow/app
     - ${AIRFLOW_PROJ_DIR:-.}/scripts:/opt/airflow/scripts
     - ${AIRFLOW_PROJ_DIR:-.}/.env.local:/opt/airflow/.env.local
+    - ${AIRFLOW_PROJ_DIR:-.}/models:/opt/airflow/models
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
