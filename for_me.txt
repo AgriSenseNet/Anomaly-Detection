@@ -28,7 +28,5 @@ SELECT * FROM fields;
 SELECT * FROM external_api_cache ORDER BY timestamp DESC LIMIT 10;
 
 df = pd.read_sql(query, connection)
-
 Read it like:
-
 Read data from the database and store it in a table called df.
