@@ -1,9 +1,9 @@
 from datetime import datetime, timedelta, timezone
+import csv
 import random
 import sys
 from pathlib import Path
 
-# Allow script to import from app/ when run from project root
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.append(str(PROJECT_ROOT))
 
@@ -13,9 +13,14 @@ from app.config.db import get_db_connection
 FIELD_ID = "field_001"
 DEVICE_ID = "device_001"
 
-# These are the confirmed Sprint 2 sensor streams:
-# Soil Moisture, Soil Temperature, Ambient Temperature, Humidity,
-# Atmospheric Pressure, Solar Radiation.
+LABEL_FILE = (
+    PROJECT_ROOT
+    / "docs"
+    / "evidence"
+    / "sprint2"
+    / "generated_anomaly_labels.csv"
+)
+
 SENSOR_CONFIG = {
     "soil_moisture": {
         "unit": "%VWC",
@@ -51,19 +56,10 @@ SENSOR_CONFIG = {
 
 
 def create_normal_value(parameter: str, timestamp: datetime) -> float:
-    """
-    Create realistic fake sensor values.
-    This is not real farm data. It is only for Sprint 2 testing.
-    """
+    hour = timestamp.hour
 
-    config = SENSOR_CONFIG[parameter]
-
-    # Solar radiation should be low at night and high in daytime
     if parameter == "solar_radiation":
-        hour = timestamp.hour
-
         if 6 <= hour <= 18:
-            # Simple day curve: highest around noon
             noon_distance = abs(12 - hour)
             max_light = 85000 - (noon_distance * 9000)
             max_light = max(max_light, 5000)
@@ -71,24 +67,19 @@ def create_normal_value(parameter: str, timestamp: datetime) -> float:
 
         return round(random.uniform(0, 800), 2)
 
-    # Humidity usually drops when daytime temperature rises
     if parameter == "humidity":
-        hour = timestamp.hour
-
         if 11 <= hour <= 15:
             return round(random.uniform(55, 72), 2)
 
         return round(random.uniform(68, 90), 2)
 
-    # Ambient temperature slightly higher during day
     if parameter == "ambient_temp":
-        hour = timestamp.hour
-
         if 10 <= hour <= 16:
             return round(random.uniform(30, 36), 2)
 
         return round(random.uniform(25, 30), 2)
 
+    config = SENSOR_CONFIG[parameter]
     return round(random.uniform(config["normal_min"], config["normal_max"]), 2)
 
 
@@ -103,18 +94,16 @@ def insert_sensor_reading(cursor, field_id, device_id, timestamp, parameter, val
             value,
             unit
         )
-        VALUES (%s, %s, %s, %s, %s, %s);
+        VALUES (%s, %s, %s, %s, %s, %s)
+        RETURNING id;
         """,
         (field_id, device_id, timestamp, parameter, value, unit),
     )
 
+    return cursor.fetchone()[0]
+
 
 def ensure_field_exists(cursor):
-    """
-    Make sure field_001 exists.
-    If it already exists, this does nothing.
-    """
-
     cursor.execute(
         """
         INSERT INTO fields (
@@ -126,15 +115,7 @@ def ensure_field_exists(cursor):
             soil_ph,
             field_capacity_vwc
         )
-        VALUES (
-            %s,
-            %s,
-            %s,
-            %s,
-            %s,
-            %s,
-            %s
-        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s)
         ON CONFLICT (field_id) DO NOTHING;
         """,
         (
@@ -149,56 +130,309 @@ def ensure_field_exists(cursor):
     )
 
 
-def insert_intentional_anomalies(cursor):
-    """
-    Add bad/suspicious readings so validation and anomaly detection
-    have something to catch later.
-    """
+def add_label(labels, row_id, timestamp, parameter, value, anomaly_type):
+    labels.append(
+        {
+            "sensor_reading_id": row_id,
+            "device_id": DEVICE_ID,
+            "timestamp": timestamp.isoformat(),
+            "sensor_type": parameter,
+            "value": value,
+            "true_label": 1,
+            "label_reason": anomaly_type,
+        }
+    )
 
-    now = datetime.now(timezone.utc)
 
-    anomalies = [
-        # physically impossible / invalid values
-        ("soil_moisture", -10.0, "%VWC", "negative soil moisture"),
-        ("humidity", 140.0, "%", "humidity above 100"),
-        ("solar_radiation", 200000.0, "lux", "solar radiation spike"),
-        ("pressure", 500.0, "hPa", "unrealistic pressure low"),
+def insert_single_anomaly(cursor, labels, timestamp, parameter, value, anomaly_type):
+    unit = SENSOR_CONFIG[parameter]["unit"]
 
-        # suspicious but not always physically impossible
-        ("soil_temp", 60.0, "C", "soil temperature spike"),
-        ("ambient_temp", 55.0, "C", "ambient temperature spike"),
-    ]
+    row_id = insert_sensor_reading(
+        cursor=cursor,
+        field_id=FIELD_ID,
+        device_id=DEVICE_ID,
+        timestamp=timestamp,
+        parameter=parameter,
+        value=value,
+        unit=unit,
+    )
 
-    for index, (parameter, value, unit, reason) in enumerate(anomalies):
-        anomaly_time = now - timedelta(minutes=index * 10)
+    add_label(labels, row_id, timestamp, parameter, value, anomaly_type)
 
-        insert_sensor_reading(
+
+def insert_stuck_sensor_block(
+    cursor,
+    labels,
+    start_time,
+    parameter,
+    value,
+    count,
+    interval_minutes,
+):
+    unit = SENSOR_CONFIG[parameter]["unit"]
+
+    for i in range(count):
+        timestamp = start_time + timedelta(minutes=i * interval_minutes)
+
+        row_id = insert_sensor_reading(
             cursor=cursor,
             field_id=FIELD_ID,
             device_id=DEVICE_ID,
-            timestamp=anomaly_time,
+            timestamp=timestamp,
             parameter=parameter,
             value=value,
             unit=unit,
         )
 
-        print(f"Inserted anomaly: {parameter}={value} ({reason})")
+        add_label(
+            labels=labels,
+            row_id=row_id,
+            timestamp=timestamp,
+            parameter=parameter,
+            value=value,
+            anomaly_type="stuck_sensor_pattern",
+        )
 
-    # Stuck sensor example: same soil moisture value repeated many times
-    stuck_start_time = now - timedelta(hours=2)
 
-    for i in range(12):
-        insert_sensor_reading(
+def insert_drift_block(
+    cursor,
+    labels,
+    start_time,
+    parameter,
+    start_value,
+    step_value,
+    count,
+    interval_minutes,
+):
+    unit = SENSOR_CONFIG[parameter]["unit"]
+
+    for i in range(count):
+        timestamp = start_time + timedelta(minutes=i * interval_minutes)
+        value = round(start_value + (i * step_value), 2)
+
+        row_id = insert_sensor_reading(
             cursor=cursor,
             field_id=FIELD_ID,
             device_id=DEVICE_ID,
-            timestamp=stuck_start_time + timedelta(minutes=i * 5),
-            parameter="soil_moisture",
-            value=31.11,
-            unit="%VWC",
+            timestamp=timestamp,
+            parameter=parameter,
+            value=value,
+            unit=unit,
         )
 
-    print("Inserted stuck sensor pattern: soil_moisture=31.11 repeated 12 times")
+        add_label(
+            labels=labels,
+            row_id=row_id,
+            timestamp=timestamp,
+            parameter=parameter,
+            value=value,
+            anomaly_type="sensor_drift_pattern",
+        )
+
+
+def insert_noise_block(
+    cursor,
+    labels,
+    start_time,
+    parameter,
+    low_value,
+    high_value,
+    count,
+    interval_minutes,
+):
+    unit = SENSOR_CONFIG[parameter]["unit"]
+
+    for i in range(count):
+        timestamp = start_time + timedelta(minutes=i * interval_minutes)
+
+        if i % 2 == 0:
+            value = low_value
+        else:
+            value = high_value
+
+        row_id = insert_sensor_reading(
+            cursor=cursor,
+            field_id=FIELD_ID,
+            device_id=DEVICE_ID,
+            timestamp=timestamp,
+            parameter=parameter,
+            value=value,
+            unit=unit,
+        )
+
+        add_label(
+            labels=labels,
+            row_id=row_id,
+            timestamp=timestamp,
+            parameter=parameter,
+            value=value,
+            anomaly_type="unstable_sensor_noise",
+        )
+
+
+def insert_anomaly_mix(cursor, mixed_start_time):
+    labels = []
+
+    # ---------------------------------------------------------
+    # Physically impossible anomalies
+    # These should be easy for validation/rules and model to see.
+    # ---------------------------------------------------------
+    physical_anomalies = [
+        ("soil_moisture", -10.0, "negative_soil_moisture"),
+        ("soil_moisture", 120.0, "soil_moisture_above_100"),
+        ("humidity", 140.0, "humidity_above_100"),
+        ("humidity", -5.0, "negative_humidity"),
+        ("pressure", 500.0, "unrealistic_pressure_low"),
+        ("pressure", 1300.0, "unrealistic_pressure_high"),
+        ("solar_radiation", 200000.0, "solar_radiation_spike"),
+        ("soil_temp", 70.0, "soil_temperature_spike"),
+        ("ambient_temp", 65.0, "ambient_temperature_spike"),
+    ]
+
+    for index, (parameter, value, anomaly_type) in enumerate(physical_anomalies):
+        timestamp = mixed_start_time + timedelta(hours=2, minutes=index * 7)
+
+        insert_single_anomaly(
+            cursor=cursor,
+            labels=labels,
+            timestamp=timestamp,
+            parameter=parameter,
+            value=value,
+            anomaly_type=anomaly_type,
+        )
+
+    # ---------------------------------------------------------
+    # In-range spikes
+    # These are still physically possible, but unusual compared
+    # to nearby normal behavior.
+    # ---------------------------------------------------------
+    in_range_spikes = [
+        ("soil_moisture", 95.0, "in_range_soil_moisture_spike"),
+        ("soil_temp", 53.0, "in_range_soil_temperature_spike"),
+        ("ambient_temp", 49.0, "in_range_ambient_temperature_spike"),
+        ("humidity", 99.0, "in_range_humidity_spike"),
+        ("pressure", 1090.0, "in_range_pressure_spike"),
+        ("solar_radiation", 118000.0, "in_range_solar_spike"),
+    ]
+
+    for index, (parameter, value, anomaly_type) in enumerate(in_range_spikes):
+        timestamp = mixed_start_time + timedelta(days=1, hours=3, minutes=index * 9)
+
+        insert_single_anomaly(
+            cursor=cursor,
+            labels=labels,
+            timestamp=timestamp,
+            parameter=parameter,
+            value=value,
+            anomaly_type=anomaly_type,
+        )
+
+    # ---------------------------------------------------------
+    # Stuck sensor blocks
+    # Same value repeats many times.
+    # ---------------------------------------------------------
+    insert_stuck_sensor_block(
+        cursor=cursor,
+        labels=labels,
+        start_time=mixed_start_time + timedelta(days=2, hours=4),
+        parameter="soil_moisture",
+        value=31.11,
+        count=24,
+        interval_minutes=5,
+    )
+
+    insert_stuck_sensor_block(
+        cursor=cursor,
+        labels=labels,
+        start_time=mixed_start_time + timedelta(days=3, hours=5),
+        parameter="humidity",
+        value=77.77,
+        count=18,
+        interval_minutes=5,
+    )
+
+    insert_stuck_sensor_block(
+        cursor=cursor,
+        labels=labels,
+        start_time=mixed_start_time + timedelta(days=4, hours=6),
+        parameter="pressure",
+        value=1008.88,
+        count=18,
+        interval_minutes=5,
+    )
+
+    # ---------------------------------------------------------
+    # Drift anomalies
+    # Sensor slowly moves away from normal.
+    # ---------------------------------------------------------
+    insert_drift_block(
+        cursor=cursor,
+        labels=labels,
+        start_time=mixed_start_time + timedelta(days=5, hours=8),
+        parameter="soil_moisture",
+        start_value=45.0,
+        step_value=2.2,
+        count=16,
+        interval_minutes=10,
+    )
+
+    insert_drift_block(
+        cursor=cursor,
+        labels=labels,
+        start_time=mixed_start_time + timedelta(days=5, hours=12),
+        parameter="ambient_temp",
+        start_value=36.0,
+        step_value=1.4,
+        count=12,
+        interval_minutes=10,
+    )
+
+    # ---------------------------------------------------------
+    # Noisy unstable sensor anomalies
+    # Jumps up/down quickly.
+    # ---------------------------------------------------------
+    insert_noise_block(
+        cursor=cursor,
+        labels=labels,
+        start_time=mixed_start_time + timedelta(days=6, hours=2),
+        parameter="soil_temp",
+        low_value=18.0,
+        high_value=55.0,
+        count=14,
+        interval_minutes=5,
+    )
+
+    insert_noise_block(
+        cursor=cursor,
+        labels=labels,
+        start_time=mixed_start_time + timedelta(days=6, hours=5),
+        parameter="solar_radiation",
+        low_value=100.0,
+        high_value=115000.0,
+        count=14,
+        interval_minutes=5,
+    )
+
+    return labels
+
+
+def write_labels_file(labels):
+    LABEL_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(LABEL_FILE, mode="w", newline="", encoding="utf-8") as file:
+        fieldnames = [
+            "sensor_reading_id",
+            "device_id",
+            "timestamp",
+            "sensor_type",
+            "value",
+            "true_label",
+            "label_reason",
+        ]
+
+        writer = csv.DictWriter(file, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(labels)
 
 
 def generate_fake_sensor_data():
@@ -210,7 +444,14 @@ def generate_fake_sensor_data():
 
         ensure_field_exists(cursor)
 
-        # Optional: clean old generated data for repeatable testing
+        cursor.execute(
+            """
+            DELETE FROM anomaly_events
+            WHERE device_id = %s;
+            """,
+            (DEVICE_ID,),
+        )
+
         cursor.execute(
             """
             DELETE FROM sensor_readings
@@ -220,13 +461,17 @@ def generate_fake_sensor_data():
             (FIELD_ID, DEVICE_ID),
         )
 
-        # Generate 7 days of readings, every 30 minutes
-        # 7 days * 48 readings/day * 6 sensor types = 2016 normal rows
-        start_time = datetime.now(timezone.utc) - timedelta(days=7)
-        interval_minutes = 30
-        total_steps = 7 * 24 * 2
+        # 28 days total:
+        # first 21 days = clean baseline for training
+        # last 7 days = mixed normal + anomaly data for scoring/testing
+        now = datetime.now(timezone.utc)
+        start_time = now - timedelta(days=28)
+        mixed_start_time = now - timedelta(days=7)
 
-        inserted_count = 0
+        interval_minutes = 15
+        total_steps = 28 * 24 * 4
+
+        normal_count = 0
 
         for step in range(total_steps):
             timestamp = start_time + timedelta(minutes=step * interval_minutes)
@@ -244,15 +489,21 @@ def generate_fake_sensor_data():
                     unit=config["unit"],
                 )
 
-                inserted_count += 1
+                normal_count += 1
 
-        insert_intentional_anomalies(cursor)
+        labels = insert_anomaly_mix(cursor, mixed_start_time)
 
         connection.commit()
 
+        write_labels_file(labels)
+
         print("Fake sensor data generation completed.")
-        print(f"Normal rows inserted: {inserted_count}")
-        print("Intentional anomaly rows inserted: 18")
+        print("--------------------------------------")
+        print(f"Normal rows inserted: {normal_count}")
+        print(f"Anomaly rows inserted: {len(labels)}")
+        print("Training baseline: first 21 days")
+        print("Mixed test period: last 7 days")
+        print(f"Labels saved to: {LABEL_FILE}")
         print("Target table: sensor_readings")
 
     except Exception as error:

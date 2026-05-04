@@ -25,43 +25,15 @@ def load_clean_sensor_data():
     conn = get_db_connection()
     query = """
         SELECT
+            id,
             field_id,
             device_id,
             timestamp,
             parameter,
             value
         FROM sensor_readings
-        WHERE
-            (
-                parameter = 'soil_moisture'
-                AND value BETWEEN 0 AND 100
-            )
-            OR
-            (
-                parameter = 'soil_temp'
-                AND value BETWEEN 0 AND 60
-            )
-            OR
-            (
-                parameter = 'ambient_temp'
-                AND value BETWEEN 0 AND 60
-            )
-            OR
-            (
-                parameter = 'humidity'
-                AND value BETWEEN 0 AND 100
-            )
-            OR
-            (
-                parameter = 'pressure'
-                AND value BETWEEN 850 AND 1100
-            )
-            OR
-            (
-                parameter = 'solar_radiation'
-                AND value BETWEEN 0 AND 120000
-            )
-        ORDER BY timestamp DESC;
+        WHERE timestamp < NOW() - INTERVAL '7 days'
+        ORDER BY timestamp ASC;
     """
 
     df = pd.read_sql(query, conn)
