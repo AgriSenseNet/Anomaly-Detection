@@ -1,0 +1,26 @@
+{
+    "soil_moisture": [
+        0,
+        100
+    ],
+    "soil_temp": [
+        0,
+        60
+    ],
+    "ambient_temp": [
+        0,
+        60
+    ],
+    "humidity": [
+        0,
+        100
+    ],
+    "pressure": [
+        850,
+        1100
+    ],
+    "solar_radiation": [
+        0,
+        120000
+    ]
+}

@@ -2,7 +2,7 @@ Step 9.7 — If the DAG does not appear
 
 docker compose exec airflow-scheduler airflow dags trigger external_api_dag
    
-
+docker compose exec airflow-scheduler python -m pip install mlflow matplotlib
 Run this:
 
 docker compose logs airflow-scheduler

@@ -1,0 +1,12 @@
+[
+    "value",
+    "delta_from_last",
+    "absolute_delta",
+    "rolling_mean_6",
+    "rolling_std_6",
+    "rolling_range_6",
+    "same_value_count_6",
+    "rolling_z_score_6",
+    "hour_of_day",
+    "day_of_week"
+]
