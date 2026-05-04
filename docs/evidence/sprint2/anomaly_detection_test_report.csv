@@ -1,2 +1,2 @@
 model_name,total_test_rows,true_positive,false_positive,true_negative,false_negative,precision,recall,f1_score
-isolation_forest_hybrid_rules,131,109,0,0,22,1.0,0.8321,0.9083
+isolation_forest_hybrid_rules,131,91,0,0,40,1.0,0.6947,0.8198
