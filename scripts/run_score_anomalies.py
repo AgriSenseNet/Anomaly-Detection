@@ -23,13 +23,15 @@ def load_sensor_data():
     conn = get_db_connection()
     query = """
         SELECT
+            id,
             field_id,
             device_id,
             timestamp,
             parameter,
             value
         FROM sensor_readings
-        ORDER BY timestamp DESC;
+        WHERE timestamp >= NOW() - INTERVAL '7 days'
+        ORDER BY timestamp ASC;
     """
 
     df = pd.read_sql(query, conn)
