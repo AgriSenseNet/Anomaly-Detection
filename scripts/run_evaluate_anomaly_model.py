@@ -1,5 +1,6 @@
 import sys
 from pathlib import Path
+import mlflow
 
 import joblib
 import pandas as pd
@@ -17,6 +18,7 @@ PREDICTIONS_FILE = PROJECT_ROOT / "docs" / "evidence" / "sprint2" / "anomaly_pre
 
 from app.config.db import get_db_connection
 from app.services.anomaly_feature_service import build_anomaly_features, get_feature_columns
+from app.services.mlflow_logging_service import setup_mlflow
 
 VALID_RANGES = {
     "soil_moisture": (0, 100),
@@ -100,6 +102,7 @@ def predict_for_parameter(parameter_df, parameter):
 
 
 def main():
+    setup_mlflow()
     print("Evaluating anomaly detection model")
     print("----------------------------------")
 

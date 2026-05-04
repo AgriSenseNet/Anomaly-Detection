@@ -1,0 +1,14 @@
+artifact_uri: file:C:\campus\projects\sem 4 project\agri\mlruns/501189169227361752/ea3f8174923148cc80c26abf08b78fc6/artifacts
+end_time: 1777879925721
+entry_point_name: ''
+experiment_id: '501189169227361752'
+lifecycle_stage: active
+run_id: ea3f8174923148cc80c26abf08b78fc6
+run_name: isolation_forest_training
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1777879921176
+status: 3
+tags: []
+user_id: User
