@@ -129,6 +129,7 @@ def main():
 
     tn, fp, fn, tp = confusion_matrix(true_labels, predicted_labels).ravel()
 
+
     report_df = pd.DataFrame(
         [
             {
@@ -163,6 +164,32 @@ def main():
             "prediction_reason",
         ]
     ].to_csv(PREDICTIONS_FILE, index=False)
+
+    with mlflow.start_run(run_name="isolation_forest_evaluation"):
+
+        mlflow.log_param("model_name", "Sensor Anomaly Detection")
+        mlflow.log_param("model_type", "Isolation Forest")
+        mlflow.log_param("evaluation_dataset", str(LABEL_FILE.name))
+
+        mlflow.log_metric("total_test_rows", len(result_df))
+        mlflow.log_metric("precision", precision)
+        mlflow.log_metric("recall", recall)
+        mlflow.log_metric("f1_score", f1)
+
+        mlflow.log_metric("true_positive", int(tp))
+        mlflow.log_metric("false_positive", int(fp))
+        mlflow.log_metric("true_negative", int(tn))
+        mlflow.log_metric("false_negative", int(fn))
+
+        mlflow.log_artifact(
+            str(REPORT_FILE),
+            artifact_path="evaluation_reports",
+        )
+
+        mlflow.log_artifact(
+            str(PREDICTIONS_FILE),
+            artifact_path="evaluation_reports",
+        )
 
     print("Evaluation completed.")
     print(f"Total rows: {len(result_df)}")

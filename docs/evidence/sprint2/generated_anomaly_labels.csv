@@ -1,4 +1,4 @@
-sensor_reading_id,device_id,timestamp,sensor_type,value,true_label,label_reason
+id,device_id,timestamp,sensor_type,value,true_label,anomaly_reason
 22231,device_001,2026-04-27T09:38:33.146566+00:00,soil_moisture,-10.0,1,negative_soil_moisture
 22232,device_001,2026-04-27T09:45:33.146566+00:00,soil_moisture,120.0,1,soil_moisture_above_100
 22233,device_001,2026-04-27T09:52:33.146566+00:00,humidity,140.0,1,humidity_above_100

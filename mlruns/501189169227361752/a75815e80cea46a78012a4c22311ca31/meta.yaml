@@ -1,0 +1,14 @@
+artifact_uri: file:C:\campus\projects\sem 4 project\agri\mlruns/501189169227361752/a75815e80cea46a78012a4c22311ca31/artifacts
+end_time: 1777895357461
+entry_point_name: ''
+experiment_id: '501189169227361752'
+lifecycle_stage: active
+run_id: a75815e80cea46a78012a4c22311ca31
+run_name: isolation_forest_evaluation
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1777895356795
+status: 3
+tags: []
+user_id: airflow

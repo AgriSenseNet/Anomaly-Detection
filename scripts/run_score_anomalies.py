@@ -1,4 +1,5 @@
 import sys
+import mlflow
 from pathlib import Path
 
 import joblib
@@ -9,6 +10,7 @@ MODEL_FOLDER = PROJECT_ROOT / "models" / "anomaly_detection"
 
 from app.config.db import get_db_connection
 from app.services.anomaly_feature_service import build_anomaly_features, get_feature_columns
+from app.services.mlflow_logging_service import setup_mlflow
 
 VALID_RANGES = {
     "soil_moisture": (0, 100),
@@ -131,6 +133,7 @@ def score_parameter(parameter_df, parameter):
 
 
 def main():
+    setup_mlflow()
     print("Scoring sensor anomalies")
     print("------------------------")
 
@@ -140,23 +143,44 @@ def main():
         print("No sensor data found for scoring.")
         sys.exit(0)
 
-    clear_old_anomalies()
 
     total_anomalies = 0
 
     parameters = sorted(df["parameter"].unique())
 
-    for parameter in parameters:
-        if parameter not in VALID_RANGES:
-            print(f"Skipping unknown parameter: {parameter}")
-            continue
+    with mlflow.start_run(run_name="isolation_forest_scoring"):
+        mlflow.log_param("model_name", "Sensor Anomaly Detection")
+        mlflow.log_param("model_type", "Isolation Forest")
+        mlflow.log_param("scoring_window", "last 7 days")
+        mlflow.log_param("output_table", "anomaly_events")
 
-        parameter_df = df[df["parameter"] == parameter].copy()
+        mlflow.log_metric("scoring_rows", len(df))    
 
-        total_anomalies += score_parameter(parameter_df, parameter)
+        for parameter in parameters:
+            if parameter not in VALID_RANGES:
+                print(f"Skipping unknown parameter: {parameter}")
+                continue
+
+            parameter_df = df[df["parameter"] == parameter].copy()
+
+            anomaly_count = score_parameter(parameter_df, parameter)
+            total_anomalies += anomaly_count
+
+            mlflow.log_metric(
+                f"{parameter}_scored_rows",
+                len(parameter_df),
+            )
+
+            mlflow.log_metric(
+                f"{parameter}_anomalies_saved",
+                anomaly_count,
+            )
+
+        mlflow.log_metric("total_anomalies_saved", total_anomalies)        
         
     print("------------------------")
     print(f"Total anomalies saved: {total_anomalies}")
+    print("MLflow scoring logging completed.")
 
 if __name__ == "__main__":
     main()
