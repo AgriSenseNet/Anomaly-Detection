@@ -9,11 +9,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 MODEL_FOLDER = PROJECT_ROOT / "models" / "anomaly_detection"
 
-LABEL_FILE = PROJECT_ROOT / "docs" / "evidence" / "sprint2" / "manual_anomaly_labels.csv"
+LABEL_FILE = PROJECT_ROOT / "docs" / "evidence" / "sprint2" / "generated_anomaly_labels.csv"
 
-REPORT_FILE = PROJECT_ROOT / "docs" / "evidence" / "sprint2" / "anomaly_detection_test_report(1).csv"
+REPORT_FILE = PROJECT_ROOT / "docs" / "evidence" / "sprint2" / "anomaly_detection_test_report.csv"
 
-PREDICTIONS_FILE = PROJECT_ROOT / "docs" / "evidence" / "sprint2" / "anomaly_predictions(1).csv"
+PREDICTIONS_FILE = PROJECT_ROOT / "docs" / "evidence" / "sprint2" / "anomaly_predictions.csv"
 
 from app.config.db import get_db_connection
 from app.services.anomaly_feature_service import build_anomaly_features, get_feature_columns
