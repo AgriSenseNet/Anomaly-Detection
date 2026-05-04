@@ -30,3 +30,6 @@ SELECT * FROM external_api_cache ORDER BY timestamp DESC LIMIT 10;
 df = pd.read_sql(query, connection)
 Read it like:
 Read data from the database and store it in a table called df.
+
+docker compose exec --user root airflow-scheduler python -m pip install --no-cache-dir mlflow
+docker compose exec airflow-scheduler python -c "import mlflow; print(mlflow.__version__)"
