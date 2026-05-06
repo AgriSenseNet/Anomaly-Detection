@@ -1,0 +1,14 @@
+artifact_uri: file:C:\campus\projects\sem 4 project\agri\mlruns/501189169227361752/3352a9bf09ea4ed69ea730b2b70f35fd/artifacts
+end_time: 1777920078795
+entry_point_name: ''
+experiment_id: '501189169227361752'
+lifecycle_stage: active
+run_id: 3352a9bf09ea4ed69ea730b2b70f35fd
+run_name: lstm_autoencoder_training
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1777920029929
+status: 3
+tags: []
+user_id: airflow
