@@ -1,21 +1,14 @@
-requests
-psycopg2-binary
-python-dotenv
-apache-airflow
 
-
-# Sprint 2 - data validation
-great-expectations
-
-# Sprint 2 - data handling and machine learning
-pandas
-numpy
-scikit-learn
-torch
-mlflow
-matplotlib
-joblib
 
 # Optional later, only if we publish anomalies to Kafka
 # kafka-python
 
+
+# Sprint 3 - Sentinel-2 / NDVI change request
+requests
+influxdb-client
+python-dotenv
+
+# For real satellite raster processing later
+rasterio
+shapely

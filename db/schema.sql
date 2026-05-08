@@ -50,7 +50,7 @@ CREATE INDEX IF NOT EXISTS idx_fields_lat_lon
     field_capacity_vwc
 )
 VALUES (
-    'field_002',
+    'field_001',
     'tomato',
     '2026-04-27',
     41.8781,
