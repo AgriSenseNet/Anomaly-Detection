@@ -1,7 +1,7 @@
 from app.services.soilgrids_service import fetch_and_update_soil_ph
 
 def main():
-    field_id = "field_004"
+    field_id = "field_001"
     lat = 41.8781  
     lon = -93.0977
 
