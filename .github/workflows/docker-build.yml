@@ -7,6 +7,8 @@ on:
       - Dockerfile
       - requirements.txt
       - dags/**
+      - batch_dags/**
+      - batch_jobs/**
       - app/**
       - scripts/**
       - models/**
@@ -22,20 +24,6 @@ jobs:
     steps:
       - name: Checkout yasindu-google-earth
         uses: actions/checkout@v4
-
-      - name: Checkout agri-data-intelligence (for batch DAGs)
-        uses: actions/checkout@v4
-        with:
-          repository: AgriSenseNet/agri-data-intelligence
-          token: ${{ secrets.ARGOCD_REPO_TOKEN }}
-          path: agri-data-intelligence
-
-      - name: Prepare batch DAGs from agri-data-intelligence
-        run: |
-          mkdir -p batch_dags batch_jobs
-          cp agri-data-intelligence/airflow/dags/batch_features_dag.py batch_dags/
-          cp agri-data-intelligence/spark/jobs/batch_features.py batch_jobs/
-          touch batch_jobs/__init__.py
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
