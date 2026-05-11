@@ -5,15 +5,9 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-# Import your already completed service functions
+from app.config.db import get_db_connection
 from app.services.open_meteo_service import fetch_and_cache_weather
 from app.services.nasa_power_service import fetch_and_cache_nasa_power
-
-# Sample field data for testing
-# Later, this can come from the fields table.
-FIELD_ID = "field_001"
-LAT = 41.8781
-LON = -93.0977
 
 default_args = {
     "owner": "yasindu",
@@ -22,46 +16,39 @@ default_args = {
     "retry_delay": timedelta(minutes=2),
 }
 
+
+def _load_fields():
+    conn = get_db_connection()
+    cur = conn.cursor()
+    cur.execute("SELECT field_id, lat, lon FROM fields;")
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return rows
+
+
 def fetch_weather_task():
-    """    Airflow task for Open-Meteo.
-    This calls your existing Open-Meteo service code.
-    """
-    result = fetch_and_cache_weather(FIELD_ID, LAT, LON)
+    for field_id, lat, lon in _load_fields():
+        result = fetch_and_cache_weather(field_id, lat, lon)
+        print(f"Open-Meteo [{field_id}]: {result.get('message')}")
+        if not result.get("success"):
+            raise Exception(f"Open-Meteo failed for {field_id}: {result.get('message')}")
 
-    print("Open-Meteo result:")
-    print(result)
 
-    if not result.get("success"):
-        raise Exception(result.get("message", "Open-Meteo task failed"))
-
-    return result
-
-    
 def fetch_nasa_power_task():
-    """
-    Airflow task for NASA POWER.
-    This calls your existing NASA POWER service code.
-    """
-    result = fetch_and_cache_nasa_power(
-        field_id=FIELD_ID,
-        lat=LAT,
-        lon=LON,
-    )
+    for field_id, lat, lon in _load_fields():
+        result = fetch_and_cache_nasa_power(field_id=field_id, lat=lat, lon=lon)
+        print(f"NASA POWER [{field_id}]: {result.get('message')}")
+        if not result.get("success"):
+            raise Exception(f"NASA POWER failed for {field_id}: {result.get('message')}")
 
-    print("NASA POWER result:")
-    print(result)
-
-    if not result.get("success"):
-        raise Exception(result.get("message", "NASA POWER task failed"))
-
-    return result
 
 with DAG(
     dag_id="external_api_dag",
-    description="Fetch Open-Meteo and NASA POWER data and cache them in PostgreSQL",
+    description="Fetch Open-Meteo and NASA POWER data for all fields and cache in PostgreSQL",
     default_args=default_args,
     start_date=datetime(2026, 1, 1),
-    schedule="@hourly",
+    schedule_interval="@hourly",
     catchup=False,
     tags=["c2", "external-api", "weather"],
 ) as dag:
