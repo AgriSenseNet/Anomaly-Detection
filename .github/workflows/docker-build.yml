@@ -1,0 +1,73 @@
+name: Build and Push Airflow Pipeline Image
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - Dockerfile
+      - requirements.txt
+      - dags/**
+      - app/**
+      - scripts/**
+      - models/**
+      - .env.local
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout yasindu-google-earth
+        uses: actions/checkout@v4
+
+      - name: Checkout agri-data-intelligence (for batch DAGs)
+        uses: actions/checkout@v4
+        with:
+          repository: AgriSenseNet/agri-data-intelligence
+          token: ${{ secrets.GITHUB_TOKEN }}
+          path: agri-data-intelligence
+
+      - name: Prepare batch DAGs from agri-data-intelligence
+        run: |
+          mkdir -p batch_dags batch_jobs
+          cp agri-data-intelligence/airflow/dags/batch_features_dag.py batch_dags/
+          cp agri-data-intelligence/spark/jobs/batch_features.py batch_jobs/
+          touch batch_jobs/__init__.py
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/agrisensenet/airflow-pipeline:latest
+            ghcr.io/agrisensenet/airflow-pipeline:sha-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Update image tag in ArgoCD manifests
+        env:
+          GH_PAT: ${{ secrets.ARGOCD_REPO_TOKEN }}
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
+          git clone https://x-access-token:${GH_PAT}@github.com/AgriSenseNet/ArgoCD.git argocd-repo
+          cd argocd-repo
+          sed -i 's|repository: .*airflow-pipeline|repository: ghcr.io/agrisensenet/airflow-pipeline|' applications/airflow/application.yaml
+          sed -i 's|tag: ".*" # airflow-pipeline|tag: "sha-${{ github.sha }}" # airflow-pipeline|' applications/airflow/application.yaml
+          git add applications/airflow/application.yaml
+          git diff --cached --quiet || git commit -m "ci: update airflow-pipeline to sha-${{ github.sha }}"
+          git push
