@@ -24,21 +24,28 @@ def initialize_gee():
     """
 
     project_id = os.getenv("GEE_PROJECT_ID")
+    service_account = os.getenv("GEE_SERVICE_ACCOUNT")
+    key_path = os.getenv("GEE_SERVICE_ACCOUNT_KEY_PATH")
 
-    try:
-        if project_id:
-            ee.Initialize(project=project_id)
-        else:
-            ee.Initialize()
-    except Exception:
-        ee.Authenticate()
+    if not project_id:
+        raise RuntimeError("GEE_PROJECT_ID is missing in .env.local")
 
-        if project_id:
-            ee.Initialize(project=project_id)
-        else:
-            ee.Initialize()
+    if not service_account:
+        raise RuntimeError("GEE_SERVICE_ACCOUNT is missing in .env.local")
 
+    if not key_path:
+        raise RuntimeError("GEE_SERVICE_ACCOUNT_KEY_PATH is missing in .env.local")
 
+    credentials = ee.ServiceAccountCredentials(
+        service_account,
+        key_path,
+    )
+
+    ee.Initialize(
+        credentials,
+        project=project_id,
+    )
+    
 def get_mean_value_from_image(image, geometry, band_name):
     """
     Get mean value for one ERA5-Land band around the field area.

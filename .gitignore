@@ -8,3 +8,6 @@ logs/
 *.log
 .DS_Store
 for_me.txt
+
+app/config/secrets/
+*.json
