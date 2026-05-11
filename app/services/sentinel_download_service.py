@@ -62,6 +62,7 @@ def download_product_zip(
 ) -> Path:
     """
     Download one Sentinel-2 product ZIP and verify it is complete.
+    Reuse existing verified ZIP if it already exists.
     """
 
     output_path = Path(output_dir)
@@ -70,15 +71,26 @@ def download_product_zip(
     zip_path = output_path / f"{product_id}.zip"
     temp_path = output_path / f"{product_id}.zip.part"
 
+    # Reuse existing complete ZIP
+    if zip_path.exists() and zip_path.stat().st_size > 0:
+        if is_zipfile(zip_path):
+            print(f"Product already downloaded and verified: {zip_path}")
+            return zip_path
+
+        print(f"Existing ZIP is invalid, deleting: {zip_path}")
+        zip_path.unlink()
+
+    # Remove old incomplete download
+    if temp_path.exists():
+        print(f"Removing incomplete temporary file: {temp_path}")
+        temp_path.unlink()
+
     url = f"{DOWNLOAD_BASE}({product_id})/$value"
 
     headers = {
         "Authorization": f"Bearer {access_token}",
         "User-Agent": "smart-agri-c2-sentinel-pipeline/1.0",
     }
-
-    if temp_path.exists():
-        temp_path.unlink()
 
     print(f"Downloading from: {url}")
     print(f"Temporary file: {temp_path}")
@@ -119,6 +131,8 @@ def download_product_zip(
         with open(temp_path, "rb") as file:
             preview = file.read(300)
 
+        temp_path.unlink(missing_ok=True)
+
         raise RuntimeError(
             "Downloaded file is not a complete ZIP file. "
             f"First bytes: {preview!r}"
@@ -128,6 +142,7 @@ def download_product_zip(
         bad_file = zip_file.testzip()
 
         if bad_file is not None:
+            temp_path.unlink(missing_ok=True)
             raise RuntimeError(f"ZIP file is corrupted. First bad file: {bad_file}")
 
     temp_path.rename(zip_path)

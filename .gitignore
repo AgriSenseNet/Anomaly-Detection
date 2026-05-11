@@ -11,3 +11,7 @@ for_me.txt
 
 app/config/secrets/
 *.json
+
+downloads/
+*.zip
+*.SAFE/

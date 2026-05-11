@@ -1,6 +1,12 @@
+import os
+from dotenv import load_dotenv
+
 from app.config.db import get_db_connection
 from app.services.sentinel_pipeline_service import process_field_satellite_indices
 
+load_dotenv(".env.local")
+
+selected_field_id = os.getenv("SENTINEL_FIELD_ID")
 
 def get_fields():
     """
@@ -11,13 +17,25 @@ def get_fields():
     conn = get_db_connection()
     cur = conn.cursor()
 
-    cur.execute(
-        """
-        SELECT field_id, crop_type, planting_date, lat, lon
-        FROM fields
-        ORDER BY field_id;
-        """
-    )
+
+    if selected_field_id:
+        cur.execute(
+            """
+            SELECT field_id, crop_type, planting_date, lat, lon
+            FROM fields
+            WHERE field_id = %s
+            ORDER BY field_id;
+            """,
+            (selected_field_id,),
+        )
+    else:
+        cur.execute(
+            """
+            SELECT field_id, crop_type, planting_date, lat, lon
+            FROM fields
+            ORDER BY field_id;
+            """
+        )
 
     rows = cur.fetchall()
 
