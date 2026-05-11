@@ -46,16 +46,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Update image tag in ArgoCD manifests
-        env:
-          GH_PAT: ${{ secrets.ARGOCD_REPO_TOKEN }}
+      - name: Print image tags
         run: |
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
-          git config --global user.name "github-actions[bot]"
-          git clone https://x-access-token:${GH_PAT}@github.com/AgriSenseNet/ArgoCD.git argocd-repo
-          cd argocd-repo
-          sed -i 's|repository: .*airflow-pipeline|repository: ghcr.io/agrisensenet/airflow-pipeline|' applications/airflow/application.yaml
-          sed -i 's|tag: ".*" # airflow-pipeline|tag: "sha-${{ github.sha }}" # airflow-pipeline|' applications/airflow/application.yaml
-          git add applications/airflow/application.yaml
-          git diff --cached --quiet || git commit -m "ci: update airflow-pipeline to sha-${{ github.sha }}"
-          git push
+          echo "Pushed: ghcr.io/agrisensenet/airflow-pipeline:latest"
+          echo "Pushed: ghcr.io/agrisensenet/airflow-pipeline:sha-${{ github.sha }}"
+          echo "ArgoCD uses 'latest' with pullPolicy:Always — no manifest update needed."
