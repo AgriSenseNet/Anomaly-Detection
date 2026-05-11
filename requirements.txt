@@ -1,14 +1,10 @@
-
-
-# Optional later, only if we publish anomalies to Kafka
-# kafka-python
-
-
-# Sprint 3 - Sentinel-2 / NDVI change request
+psycopg2-binary
+pandas
+scikit-learn
+joblib
+matplotlib
+mlflow
+numpy
 requests
 influxdb-client
 python-dotenv
-
-# For real satellite raster processing later
-rasterio
-shapely
