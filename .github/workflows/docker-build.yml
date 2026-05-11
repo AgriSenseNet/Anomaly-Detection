@@ -27,7 +27,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: AgriSenseNet/agri-data-intelligence
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.ARGOCD_REPO_TOKEN }}
           path: agri-data-intelligence
 
       - name: Prepare batch DAGs from agri-data-intelligence
