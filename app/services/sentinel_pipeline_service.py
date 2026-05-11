@@ -47,7 +47,7 @@ from app.services.sentinel_download_service import download_product_zip
 from app.services.sentinel_band_reader_service import read_required_bands_from_zip
 from app.services.satellite_index_service import compute_indices_from_arrays
 
-load_dotenv(".env.local")
+load_dotenv(".env.local", override=True)
 
 
 def get_cloud_cover(product: dict) -> float:
@@ -99,9 +99,23 @@ def process_field_satellite_indices(field: dict):
     )
 
     if not product:
-        raise RuntimeError(
-            f"No Sentinel-2 L2A product found for field {field['field_id']}"
-        )
+        print(f"No Sentinel-2 L2A product found for field {field['field_id']}")
+
+        result = {
+            "field_id": field["field_id"],
+            "overpass_date": datetime.now(timezone.utc).date().isoformat(),
+            "overpass_timestamp": datetime.now(timezone.utc),
+            "ndvi_mean": 0.0,
+            "ndwi_mean": 0.0,
+            "evi_mean": 0.0,
+            "low_ndvi_zone_percent": 0.0,
+            "cloud_cover": 100.0,
+            "is_stale": True,
+        }
+
+        write_satellite_indices(result)
+
+        return result
 
     product_id = product["Id"]
     product_name = product["Name"]

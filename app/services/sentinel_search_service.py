@@ -3,7 +3,7 @@ import os
 import requests
 from dotenv import load_dotenv
 
-load_dotenv(".env.local")
+load_dotenv(".env.local", override=True)
 
 CATALOGUE_URL = "https://catalogue.dataspace.copernicus.eu/odata/v1/Products"
 

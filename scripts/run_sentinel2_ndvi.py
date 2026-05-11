@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from app.config.db import get_db_connection
 from app.services.sentinel_pipeline_service import process_field_satellite_indices
 
-load_dotenv(".env.local")
+load_dotenv(".env.local", override=True)
 
 selected_field_id = os.getenv("SENTINEL_FIELD_ID")
 
@@ -59,7 +59,17 @@ def get_fields():
 
 
 def main():
-    print("Sentinel-2 NDVI demo pipeline started")
+
+    demo_mode = os.getenv("SENTINEL_DEMO_MODE", "true").lower() == "true"
+    selected_field_id = os.getenv("SENTINEL_FIELD_ID")
+
+    print("=" * 60)
+    print("Sentinel-2 NDVI pipeline started")
+    print(f"Mode: {'DEMO MODE' if demo_mode else 'REAL SENTINEL MODE'}")
+    print(f"Selected field: {selected_field_id if selected_field_id else 'ALL FIELDS'}")
+    print("=" * 60)
+
+    print("Sentinel-2 NDVI pipeline started")
 
     fields = get_fields()
 
@@ -76,7 +86,10 @@ def main():
             f"EVI={result['evi_mean']}"
         )
 
-    print("Sentinel-2 NDVI demo pipeline finished")
+    print("Sentinel-2 NDVI pipeline finished")
+    print("=" * 60)
+    print("Sentinel-2 NDVI pipeline finished")
+    print("=" * 60)
 
 
 if __name__ == "__main__":
