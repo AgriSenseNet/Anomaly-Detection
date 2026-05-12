@@ -5,6 +5,9 @@ WORKDIR /opt/airflow
 RUN apt-get update && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/*
 
+# CPU-only torch — LSTM Autoencoder needs it; avoids the 4 GB CUDA build
+RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/whl/cpu
+
 # Minimal deps for anomaly inference — no airflow, no training packages
 RUN pip install --no-cache-dir \
     "mlflow>=2.8.0" \
