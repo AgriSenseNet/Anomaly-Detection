@@ -53,7 +53,10 @@ def fetch_sensor_data(conn) -> pd.DataFrame:
     with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
         cur.execute(query, (CONTEXT_WINDOW_MINUTES, list(PARAMETERS)))
         rows = cur.fetchall()
-    return pd.DataFrame(rows)
+    df = pd.DataFrame(rows)
+    if not df.empty:
+        df["value"] = df["value"].astype(float)
+    return df
 
 
 def load_if_models() -> dict:
