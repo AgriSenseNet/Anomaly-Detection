@@ -44,16 +44,12 @@ def main():
     if not field:
         raise RuntimeError(f"No field found for field_id={field_id}")
 
-    # Later this should come from Sentinel-2 DAG / InfluxDB satellite_indices.
-    # For now it can be demo value.
-    ndvi_mean = 0.62
 
     result = fetch_and_cache_gee_era5_data(
         field_id=field["field_id"],
         lat=field["lat"],
         lon=field["lon"],
         planting_date=field["planting_date"],
-        ndvi_mean=ndvi_mean,
     )
 
     print("Success:", result["success"])
@@ -65,7 +61,6 @@ def main():
         print("Source:", result["data"]["source"])
         print("Start date:", result["data"]["start_date"])
         print("End date:", result["data"]["end_date"])
-        print("NDVI mean:", result["data"]["ndvi_mean"])
         print("Record count:", len(result["data"]["records"]))
 
         if result["data"]["records"]:
