@@ -4,9 +4,9 @@ from pathlib import Path
 import mlflow
 from dotenv import load_dotenv
 
-load_dotenv(".env.local")
-
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+load_dotenv(PROJECT_ROOT / ".env.local")
 
 LOCAL_MLFLOW_FOLDER = PROJECT_ROOT / "mlruns"
 EXPERIMENT_NAME = "Sensor_Anomaly_Detection"
