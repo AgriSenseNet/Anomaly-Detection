@@ -31,3 +31,6 @@ numpy
 requests
 influxdb-client
 python-dotenv
+torch
+xgboost
+optuna

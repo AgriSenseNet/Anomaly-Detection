@@ -25,4 +25,7 @@ RUN cp /opt/airflow/.env.local /opt/airflow/.env
 COPY --chown=airflow:root batch_dags/ /opt/airflow/dags/
 COPY --chown=airflow:root batch_jobs/ /opt/airflow/spark/jobs/
 
+# Crop yield training pipeline (LSTM + XGBoost, logs to MLflow)
+COPY --chown=airflow:root crop_yield/ /opt/airflow/crop_yield/
+
 ENV PYTHONPATH=/opt/airflow
