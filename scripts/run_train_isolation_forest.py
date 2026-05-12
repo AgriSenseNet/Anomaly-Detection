@@ -217,6 +217,20 @@ def main():
         mlflow.log_metric("trained_model_count", trained_model_count)
         mlflow.log_metric("total_training_rows", total_training_rows)
 
+        run_id = mlflow.active_run().info.run_id
+        client = mlflow.tracking.MlflowClient()
+        try:
+            client.create_registered_model("Anomaly_Isolation_Forest")
+        except mlflow.exceptions.MlflowException:
+            pass
+        mv = client.create_model_version(
+            name="Anomaly_Isolation_Forest",
+            source=f"runs:/{run_id}/models",
+            run_id=run_id,
+        )
+        client.set_model_version_tag(mv.name, mv.version, "stage", "Staging")
+        print(f"Registered 'Anomaly_Isolation_Forest' v{mv.version} (tag: Staging)")
+
     print("\nTraining completed.")
     print("MLflow logging completed.")
 
