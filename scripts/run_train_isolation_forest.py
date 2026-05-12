@@ -25,7 +25,7 @@ VALID_RANGES = {
     "ambient_temp": (0, 60),
     "humidity": (0, 100),
     "pressure": (850, 1100),
-    "solar_radiation": (0, 120000),
+    "lux": (0, 120000),
 }
 
 
@@ -41,7 +41,6 @@ def load_clean_sensor_data():
             parameter,
             value
         FROM sensor_readings
-        WHERE timestamp < NOW() - INTERVAL '7 days'
         ORDER BY timestamp ASC;
     """
 
@@ -163,7 +162,7 @@ def main():
         mlflow.log_param("n_estimators", 100)
         mlflow.log_param("random_state", 42)
         mlflow.log_param("feature_set_version", "v2")
-        mlflow.log_param("training_filter", "timestamp older than 7 days + physically valid rows")
+        mlflow.log_param("training_filter", "physically valid rows only")
 
         mlflow.log_text(
             json.dumps(feature_columns, indent=4),
