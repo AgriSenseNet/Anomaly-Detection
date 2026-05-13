@@ -173,7 +173,7 @@ def fetch_gee_era5_raw_records(lat, lon, start_date, end_date):
     return raw_records
 
 
-def build_gee_era5_json_body(field_id, lat, lon, planting_date, ndvi_mean=None):
+def build_gee_era5_json_body(field_id, lat, lon, planting_date):
     """
     Build the JSON body that will be saved in external_api_cache.
 
@@ -212,9 +212,6 @@ def build_gee_era5_json_body(field_id, lat, lon, planting_date, ndvi_mean=None):
         "start_date": planting_date.isoformat(),
         "end_date": end_date.isoformat(),
 
-        # This comes from Sentinel-2 DAG later.
-        # For now it can be demo value or None.
-        "ndvi_mean": ndvi_mean,
 
         # These are the raw records your teammate needs.
         "records": raw_records,
@@ -226,14 +223,13 @@ def build_gee_era5_json_body(field_id, lat, lon, planting_date, ndvi_mean=None):
             "soil_temperature_level_1_k": "Used later for soil_temp_7d_mean",
             "volumetric_soil_water_layer_1": "Used later for soil_moisture_7d_mean and soil_moisture_7d_std",
             "surface_solar_radiation_downwards_hourly_j_m2": "Used later for solar_lux_accumulated_since_planting",
-            "ndvi_mean": "Joined from Sentinel-2 DAG",
         },
     }
 
     return json_body
 
 
-def fetch_and_cache_gee_era5_data(field_id, lat, lon, planting_date, ndvi_mean=None):
+def fetch_and_cache_gee_era5_data(field_id, lat, lon, planting_date):
     """
     Fetch raw GEE ERA5-Land data and save it to external_api_cache.
 
@@ -246,7 +242,6 @@ def fetch_and_cache_gee_era5_data(field_id, lat, lon, planting_date, ndvi_mean=N
             lat=lat,
             lon=lon,
             planting_date=planting_date,
-            ndvi_mean=ndvi_mean,
         )
 
         insert_gee_era5_cache(field_id, gee_json)

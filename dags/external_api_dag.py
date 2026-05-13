@@ -6,6 +6,7 @@ from airflow import DAG
 from airflow.operators.python import PythonOperator
 
 from app.config.db import get_db_connection
+from app.services.gee_era5_service import fetch_and_cache_gee_era5_data
 from app.services.open_meteo_service import fetch_and_cache_weather
 from app.services.nasa_power_service import fetch_and_cache_nasa_power
 
@@ -20,7 +21,7 @@ default_args = {
 def _load_fields():
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT field_id, lat, lon FROM fields;")
+    cur.execute("SELECT field_id, lat, lon, planting_date FROM fields;")
     rows = cur.fetchall()
     cur.close()
     conn.close()
@@ -41,6 +42,18 @@ def fetch_nasa_power_task():
         print(f"NASA POWER [{field_id}]: {result.get('message')}")
         if not result.get("success"):
             raise Exception(f"NASA POWER failed for {field_id}: {result.get('message')}")
+
+def fetch_gee_era5_task():
+    for field_id, lat, lon, planting_date  in _load_fields():
+        result = fetch_and_cache_gee_era5_data(
+            field_id=field_id,
+            lat=lat,
+            lon=lon,
+            planting_date=planting_date,
+        )
+        print(f"GEE ERA5-Land [{field_id}]: {result.get('message')}")
+        if not result.get("success"):
+            raise Exception(f"GEE ERA5-Land failed for {field_id}: {result.get('message')}")
 
 
 with DAG(
@@ -63,4 +76,9 @@ with DAG(
         python_callable=fetch_nasa_power_task,
     )
 
-    open_meteo >> nasa_power
+    gee_era5 = PythonOperator(
+        task_id="fetch_gee_era5_task",
+        python_callable=fetch_gee_era5_task,
+    )
+
+    open_meteo >> gee_era5
