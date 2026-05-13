@@ -1,0 +1,32 @@
+name: Inference Smoke Test — Anomaly Detection
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  inference-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build inference image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.inference
+          load: true
+          tags: anomaly-inference:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run inference test
+        run: |
+          docker run --rm \
+            -e MLFLOW_TRACKING_URI=${{ secrets.MLFLOW_TRACKING_URI }} \
+            anomaly-inference:latest

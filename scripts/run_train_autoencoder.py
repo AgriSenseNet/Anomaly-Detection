@@ -27,7 +27,7 @@ VALID_RANGES = {
     "ambient_temp": (0, 60),
     "humidity": (0, 100),
     "pressure": (850, 1100),
-    "solar_radiation": (0, 120000),
+    "lux": (0, 120000),
 }
 
 
@@ -43,7 +43,6 @@ def load_clean_sensor_data():
             parameter,
             value
         FROM sensor_readings
-        WHERE timestamp < NOW() - INTERVAL '7 days'
         ORDER BY device_id, parameter, timestamp ASC;
     """
 
@@ -104,7 +103,7 @@ def main():
         mlflow.log_param("epochs", EPOCHS)
         mlflow.log_param("learning_rate", LEARNING_RATE)
         mlflow.log_param("hidden_size", HIDDEN_SIZE)
-        mlflow.log_param("training_filter", "older than 7 days + physically valid rows")
+        mlflow.log_param("training_filter", "physically valid rows only")
 
         mlflow.log_text(
             "\n".join(feature_columns),
@@ -137,6 +136,20 @@ def main():
             str(result["metadata_file"]),
             artifact_path="sequence_metadata",
         )
+
+        run_id = mlflow.active_run().info.run_id
+        client = mlflow.tracking.MlflowClient()
+        try:
+            client.create_registered_model("Anomaly_LSTM_Autoencoder")
+        except mlflow.exceptions.MlflowException:
+            pass
+        mv = client.create_model_version(
+            name="Anomaly_LSTM_Autoencoder",
+            source=f"runs:/{run_id}/models",
+            run_id=run_id,
+        )
+        client.set_model_version_tag(mv.name, mv.version, "stage", "Staging")
+        print(f"Registered 'Anomaly_LSTM_Autoencoder' v{mv.version} (tag: Staging)")
 
     print("-------------------------")
     print("LSTM Autoencoder training completed.")
